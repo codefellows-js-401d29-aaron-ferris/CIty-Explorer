@@ -1,6 +1,42 @@
 import React from 'react';
 import superagent from 'superagent';
 
+// stuff to get the fields. Goes inside?
+let __API_URL__ = 'https://city-explorer-backend.herokuapp.com';
+let GOOGLE_MAPS_API_KEY = /* use .env to insert my key **/ 'key';
+const fields = ['weather', 'yelp', 'meetups', 'movies', 'trails'];
+
+
+const getLocation = (searchQuery) => {
+  let url = `${__API_URL__}/location?${searchQuery}`;
+  let results =  superagent(url).query({ data: searchQuery });
+  return results.body;
+};
+
+const mapURL = (location) => {
+  return `https://maps.googleapis.com/maps/api/staticmap?center=${location.latitude}%2c%20${location.longitude}&zoom=13&size=600x300&maptype=roadmap
+  &key=${GOOGLE_MAPS_API_KEY}`;
+};
+
+//put inside
+let data = results.reduce((acc, result, idx) => {
+  acc[resources[idx]] = result.body;
+  return acc;
+}, {});
+
+const getFields = (location) => {
+  let urls = fields.map(field => `${__API_URL__}/${resource}`);
+  let dataRequests = urls.map(url => {
+    return superagent.get(url).query({ data: location });
+  });
+
+  let results = Promise.all(dataRequests);
+  let data = results.reduce((acc, result, idx) => {
+    acc[resources[idx]] = result.body;
+    return acc;
+  }, {});
+  return data;
+};
 
 //Where everything is compiled
 class App extends React.Component {
@@ -14,6 +50,7 @@ class App extends React.Component {
       data: {}
     };
   }
+
 
   handleErr = (errMsg) => this.setState({ errMsg });
 
@@ -171,7 +208,7 @@ class Columns extends React.Component {
         <h3>Results from the Dark Sky API</h3>
         <ul className="weather-results">
           {
-            props.data.map((day, idx) => <li key={idx}>
+            props.weatherdata.map((day, idx) => <li key={idx}>
               The forecast for {day.time} is: {day.forecast}
             </li>)
           }
@@ -182,7 +219,7 @@ class Columns extends React.Component {
         <section>
         <h3>Results from the Yelp API</h3>
           <ul className="yelp-results">
-            {props.data.map((restaurant, idx) => {
+            {props.yelpdata.map((restaurant, idx) => {
               return (
                 <li key={idx}>
                   <a href={restaurant.url}>{restaurant.name}</a>
@@ -197,7 +234,7 @@ class Columns extends React.Component {
         <section>
           <h3>Results from the Meetup API</h3>
           <ul className="meetups-results">
-            {props.data.map((meetup, idx) => {
+            {props.meetupsdata.map((meetup, idx) => {
               return (
                 <li key={idx}>
                   <a href={meetup.link}>{meetup.name}</a>
@@ -213,7 +250,7 @@ class Columns extends React.Component {
         <section>
       <h3>Results from The Movie DB API</h3>
         <ul className="movies-results">
-          {props.data.map((movie, idx) => {
+          {props.moviesdata.map((movie, idx) => {
             return (
               <li key={idx}>
                 <p><span>{movie.title}</span> was relased on {movie.released_on}. Out of {movie.total_votes} total votes, {movie.title} has an average vote of {movie.average_votes} and a popularity score of {movie.popularity}.</p>
@@ -228,7 +265,7 @@ class Columns extends React.Component {
         <section>
           <h3>Results from the Hiking Project API</h3>
           <ul className="trails-results">
-            {props.data.map((trail, idx) => {
+            {props.trailsdata.map((trail, idx) => {
               return (
                 <li key={idx}>
                   <p>Hike Name: <a href={trail.trail_url}>{trail.name}</a>, Location: {trail.location}, Distance: {trail.length} miles</p>
